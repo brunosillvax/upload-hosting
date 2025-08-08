@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upload e Hospedagem de Arquivos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  <style>
+    /* Terminal de debug */
+    #debug-terminal {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      width: 320px;
+      max-height: 200px;
+      overflow-y: auto;
+      background: #111;
+      color: #0f0;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      z-index: 9999;
+      border: 1px solid #0f0;
+      border-radius: 6px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main class="container" role="main">
+    <header>
+      <h1>📁 Upload e Hospedagem de Arquivos</h1>
+      <button id="toggle-dark-mode" aria-pressed="false" aria-label="Alternar modo escuro">🌓 Modo Escuro</button>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div id="flash-messages" role="alert" aria-live="assertive">
+          {% for category, msg in messages %}
+            <div class="flash flash-{{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Aviso fixo -->
+    <section class="aviso-exclusao aviso-vermelho" aria-label="Aviso importante sobre exclusão automática">
+      ⚠️ <strong>Atenção:</strong> Os arquivos enviados serão excluídos automaticamente após <em>5 minutos</em>.
+    </section>
+
+    <!-- Formulário Upload -->
+    <form id="upload-form" action="{{ url_for('index') }}" method="POST" enctype="multipart/form-data" novalidate aria-describedby="upload-feedback" aria-label="Formulário para upload de arquivos">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="file">📂 Selecione um ou mais arquivos para upload:</label>
+      <input type="file" name="file" id="file" multiple required aria-required="true" aria-describedby="file-help" />
+      <small id="file-help">Extensões permitidas: {{ allowed_extensions|join(', ') }} | Tamanho máximo: {{ (max_content_length / (1024*1024))|int }}MB</small>
+      <button type="submit" id="btn-submit">📤 Enviar</button>
+      <div id="upload-feedback" aria-live="polite" role="status" class="upload-feedback"></div>
+    </form>
+
+    <!-- Lista de Arquivos -->
+    <section class="files-list" aria-label="Lista de arquivos enviados">
+      <h2>📑 Arquivos disponíveis</h2>
+
+      <label for="search" class="sr-only">Buscar arquivos</label>
+      <input type="search" id="search" name="search" placeholder="🔍 Buscar arquivos..." value="{{ search }}" autocomplete="off" aria-controls="files-list-ul" />
+
+      {% if files %}
+        <ul id="files-list-ul">
+          {% for file in files %}
+            <li>
+              <span class="filename" title="{{ file.filename }}">📎 {{ file.filename|truncate(30, True, '...') }}</span>
+              <small>Downloads: {{ file.downloads }} | Exclui em: {{ file.time_left }} seg</small>
+              <a href="{{ url_for('redirect_short', short_id=file.short_id) }}" target="_blank" rel="noopener noreferrer" class="file-link" aria-label="Abrir {{ file.filename }}">
+                🔗 Abrir
+              </a>
+              <button class="copy-btn" data-link="{{ url_for('redirect_short', short_id=file.short_id, _external=True) }}" aria-label="Copiar link de {{ file.filename }}" title="Copiar link">📋</button>
+              <button class="delete-btn" data-filename="{{ file.filename }}" aria-label="Excluir {{ file.filename }}" title="Excluir arquivo">🗑️</button>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <!-- Paginação -->
+        <nav class="pagination" role="navigation" aria-label="Paginação da lista de arquivos">
+          {% if page > 1 %}
+            <a href="{{ url_for('index', page=page-1, search=search) }}" class="page-link" aria-label="Página anterior">&laquo; Anterior</a>
+          {% else %}
+            <span class="page-link disabled">&laquo; Anterior</span>
+          {% endif %}
+
+          <span class="current-page">Página {{ page }} de {{ total_pages }}</span>
+
+          {% if page < total_pages %}
+            <a href="{{ url_for('index', page=page+1, search=search) }}" class="page-link" aria-label="Próxima página">Próximo &raquo;</a>
+          {% else %}
+            <span class="page-link disabled">Próximo &raquo;</span>
+          {% endif %}
+        </nav>
+      {% else %}
+        <p>Nenhum arquivo enviado ainda.</p>
+      {% endif %}
+    </section>
+  </main>
+
+  <!-- Terminal Debug -->
+  <div id="debug-terminal" aria-label="Terminal de debug"></div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

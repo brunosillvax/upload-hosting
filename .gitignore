@@ -1,0 +1,13 @@
+# Ignorar a pasta uploads com os arquivos enviados
+/uploads/*
+
+# Ignorar arquivos pycache
+__pycache__/
+*.pyc
+
+# Ignorar logs
+logs/
+
+# Ignorar ambiente virtual (se criado)
+venv/
+.env
